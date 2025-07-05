@@ -1,111 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Guessing Game</title>
-  <style>
-    body {
-      background: linear-gradient(135deg, #f6d365, #fda085);
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
-      color: #333;
-    }
-    h1 {
-      color: #fff;
-      text-shadow: 1px 1px 3px #000;
-    }
-    .game-container {
-      background: rgba(255,255,255,0.9);
-      border-radius: 10px;
-      padding: 20px;
-      max-width: 500px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    }
-    input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      width: 60%;
-      border: 2px solid #f6d365;
-      border-radius: 5px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #f67280;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-    button:hover {
-      background-color: #c06c84;
-    }
-    .hint {
-      font-weight: bold;
-      color: #555;
-      margin-top: 15px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Guessing Game</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+  }
+  .intro, .game-container, .end-screen {
+    display: none;
+    padding: 40px;
+    min-height: 100vh;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  .intro {
+    display: flex;
+    font-size: 1.5em;
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+  .game-container {
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    color: #58a6ff;
+    margin-bottom: 10px;
+  }
+  input[type="text"] {
+    padding: 10px;
+    font-size: 18px;
+    width: 60%;
+    border: 2px solid #58a6ff;
+    border-radius: 5px;
+    background: #161b22;
+    color: #c9d1d9;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #238636;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+  }
+  button:hover {
+    background-color: #2ea043;
+  }
+  .hint, .timer, .celebration {
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  .timer {
+    font-size: 1.2em;
+    color: #f85149;
+  }
+  .celebration {
+    color: #3fb950;
+    font-size: 1.5em;
+  }
+</style>
 </head>
 <body>
+
+<div class="intro" id="intro"></div>
+
+<div class="game-container" id="game">
   <h1>🎯 Guessing Game 🎯</h1>
-  <div class="game-container">
-    <h2 id="round-title">Round 1</h2>
-    <p id="instruction">Guess the 4-letter word!</p>
-    <input type="text" id="guessInput" placeholder="Enter your guess" />
-    <button onclick="submitGuess()">Submit</button>
-    <div class="hint" id="hint"></div>
-  </div>
+  <div class="timer" id="timer"></div>
+  <h2 id="round-title"></h2>
+  <p id="instruction"></p>
+  <div id="underscores"></div>
+  <input type="text" id="guessInput" placeholder="Enter your guess" />
+  <button onclick="submitGuess()">Submit</button>
+  <div class="hint" id="hint"></div>
+  <div class="celebration" id="celebration"></div>
+</div>
 
-  <script>
-    const rounds = [
-      { answer: "LOVE", type: "word", instruction: "Guess the 4-letter word!" },
-      { answer: "I LOVE YOU", type: "sentence", instruction: "Guess the 3-word sentence!" },
-      { answer: "HAPPY BIRTHDAY", type: "sentence", instruction: "Guess the 2-word sentence!" }
-    ];
+<div class="end-screen" id="endScreen"></div>
 
-    let currentRound = 0;
-    let revealedLetters = 0;
+<!-- Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<!-- Sounds -->
+<audio id="successSound" src="https://freesound.org/data/previews/522/522858_11540356-lq.mp3"></audio>
+<audio id="tickSound" src="https://freesound.org/data/previews/341/341695_6261194-lq.mp3"></audio>
 
-    function submitGuess() {
-      const input = document.getElementById("guessInput");
-      const guess = input.value.trim().toUpperCase();
-      const round = rounds[currentRound];
-      const hintDiv = document.getElementById("hint");
+<script>
+const introTexts = [
+  "Hi, Fahad!\nI see you have entered a dangerous game.",
+  "Ready to guess?"
+];
 
-      if (guess === round.answer) {
-        currentRound++;
-        if (currentRound >= rounds.length) {
-          document.querySelector(".game-container").innerHTML = `
-            <h2>🎉 Congratulations! 🎉</h2>
-            <p>You completed all rounds!</p>
-          `;
-        } else {
-          revealedLetters = 0;
-          updateRound();
-        }
+let currentIntro = 0;
+let charIndex = 0;
+const introDiv = document.getElementById('intro');
+const gameDiv = document.getElementById('game');
+const endScreen = document.getElementById('endScreen');
+
+const words = [
+  "ALLAH",
+  "BATHROBE",
+  "GIFT",
+  "FUTURE",
+  "HUGGY",
+  "GRATEFUL",
+  "FAMILY",
+  "DISCIPLINE"
+];
+
+const fixedRounds = [
+  { answer: "HAPPY BIRTHDAY", type: "sentence" },
+  { answer: "I LOVE YOU", type: "sentence" }
+];
+
+let rounds = [];
+let currentRound = 0;
+let revealedLetters = 0;
+let timeRemaining = 120;
+let timerInterval;
+
+function typeIntro() {
+  const text = introTexts[currentIntro];
+  if (charIndex < text.length) {
+    introDiv.innerHTML = text.substring(0, charIndex + 1).replace(/\n/g, "<br>");
+    charIndex++;
+    setTimeout(typeIntro, 50);
+  } else {
+    currentIntro++;
+    if (currentIntro < introTexts.length) {
+      charIndex = 0;
+      setTimeout(() => typeIntro(), 1000);
+    } else {
+      startGame();
+    }
+  }
+}
+
+window.onload = () => {
+  introDiv.style.display = 'flex';
+  typeIntro();
+};
+
+function startGame() {
+  // Build rounds
+  const shuffled = words.sort(() => 0.5 - Math.random());
+  rounds = [{ answer: "LOVE", type: "word" }];
+  shuffled.forEach(w => {
+    rounds.push({ answer: w, type: w.includes(" ") ? "phrase" : "word" });
+  });
+  rounds = rounds.concat(fixedRounds);
+
+  introDiv.style.display = 'none';
+  gameDiv.style.display = 'flex';
+  updateRound();
+  startTimer();
+}
+
+function startTimer() {
+  const timerDiv = document.getElementById("timer");
+  timerDiv.textContent = `⏳ Time Left: ${timeRemaining}s`;
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    document.getElementById("tickSound").play();
+    timerDiv.textContent = `⏳ Time Left: ${timeRemaining}s`;
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      endGame(false);
+    }
+  }, 1000);
+}
+
+function submitGuess() {
+  const input = document.getElementById("guessInput");
+  const guess = input.value.trim().toUpperCase();
+  const round = rounds[currentRound];
+  const hintDiv = document.getElementById("hint");
+  const celebrationDiv = document.getElementById("celebration");
+
+  if (guess === round.answer) {
+    playSuccess();
+    celebrationDiv.textContent = "🎉 Correct!";
+    setTimeout(() => {
+      celebrationDiv.textContent = "";
+      currentRound++;
+      if (currentRound >= rounds.length) {
+        endGame(true);
       } else {
-        revealedLetters++;
-        const hint = round.answer.slice(0, revealedLetters).split("").join(" ");
-        hintDiv.textContent = `Hint: ${hint}`;
-        if (revealedLetters >= round.answer.length) {
-          hintDiv.textContent = `The answer was: ${round.answer}`;
-        }
+        revealedLetters = 0;
+        updateRound();
       }
-      input.value = "";
-      input.focus();
+    }, 1200);
+  } else {
+    revealedLetters++;
+    const partial = round.answer.slice(0, revealedLetters).split("").join(" ");
+    hintDiv.textContent = `Hint: ${partial}`;
+    if (revealedLetters >= round.answer.length) {
+      hintDiv.textContent = `The answer was: ${round.answer}`;
     }
+  }
+  input.value = "";
+  input.focus();
+}
 
-    function updateRound() {
-      const round = rounds[currentRound];
-      document.getElementById("round-title").textContent = `Round ${currentRound + 1}`;
-      document.getElementById("instruction").textContent = round.instruction;
-      document.getElementById("hint").textContent = "";
-      document.getElementById("guessInput").placeholder = "Enter your guess";
-    }
-  </script>
+function updateRound() {
+  const round = rounds[currentRound];
+  const roundTitle = document.getElementById("round-title");
+  const instruction = document.getElementById("instruction");
+  const underscores = document.getElementById("underscores");
+  const hintDiv = document.getElementById("hint");
+
+  let promptType = round.type;
+  if (round.answer === "HAPPY BIRTHDAY" || round.answer === "I LOVE YOU") {
+    promptType = "sentence";
+  }
+  const wordCount = round.answer.split(" ").length;
+  const firstLetter = round.answer.charAt(0);
+  if (promptType === "word") {
+    instruction.textContent = `Guess this ${round.answer.length} letter word that starts with ${firstLetter}`;
+  } else if (promptType === "phrase") {
+    instruction.textContent = `Guess this ${wordCount} word phrase that starts with ${firstLetter}`;
+  } else {
+    instruction.textContent = `Guess this ${wordCount} word sentence that starts with ${firstLetter}`;
+  }
+  roundTitle.textContent = `Round ${currentRound + 1}`;
+  hintDiv.textContent = "";
+  underscores.innerHTML = round.answer.split("").map(c => (c === " " ? "&nbsp;" : "_")).join(" ");
+}
+
+function playSuccess() {
+  const sound = document.getElementById("successSound");
+  sound.currentTime = 0;
+  sound.play();
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 }
+  });
+}
+
+function endGame(success) {
+  clearInterval(timerInterval);
+  gameDiv.style.display = 'none';
+  endScreen.style.display = 'flex';
+  if (success) {
+    endScreen.innerHTML = `<h2>🎉 Congratulations!</h2><p>You guessed all words in time!</p><button onclick="location.reload()">Play Again</button>`;
+  } else {
+    endScreen.innerHTML = `<h2>⏳ Time's Up!</h2><p>Better luck next time.</p><button onclick="location.reload()">Try Again</button>`;
+  }
+}
+</script>
+
 </body>
 </html>
